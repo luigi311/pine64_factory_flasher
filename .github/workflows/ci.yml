@@ -1,0 +1,38 @@
+name: CI
+on:
+  workflow_dispatch:
+  push:
+    paths-ignore:
+      - .gitignore
+      - "*.md"
+  pull_request:
+    paths-ignore:
+      - .gitignore
+      - "*.md"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: pine64_factory_flasher
+      
+      - name: clone buildroot
+        uses: actions/checkout@v4
+        with:
+          repository: buildroot/buildroot
+          path: buildroot
+          ref: 2024.02.1
+        
+      - name: build
+        run: |
+          cd buildroot
+          make BR2_EXTERNAL=$(pwd)/../pine64_factory_flasher pinetab2v2_defconfig
+          make -j$(nproc)
+        
+      - name: upload
+        uses: actions/upload-artifact@v2
+        with:
+          name: buildroot
+          path: buildroot/output/images/sdcard.img
